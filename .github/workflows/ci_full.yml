@@ -1,4 +1,4 @@
-name: Tests with Code Coverage
+name: Backend Tests with Code Coverage
 
 on:
   push:
@@ -9,8 +9,8 @@ on:
       - master
 
 jobs:
-  tests:
-    name: Run Tests with Code Coverage
+  backend-tests:
+    name: Run Backend Tests with Code Coverage
     runs-on: ubuntu-22.04
     services:
       postgres:
@@ -31,14 +31,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Backend Tests
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '17' # Используйте вашу версию Java
 
-      - name: Run Backend Tests with Coverage
+      - name: Run Maven Tests with Coverage
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/todo_db
           SPRING_DATASOURCE_USERNAME: postgres
@@ -47,35 +46,20 @@ jobs:
           cd todo
           mvn clean verify jacoco:report
 
-      - name: Move Backend Coverage Report
-        run: |
-          mkdir -p reports/backend
-          mv todo/target/site/jacoco/* reports/backend
-
-      # Frontend Tests
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
         with:
-          node-version: '20'
+          name: coverage-report
+          path: todo/target/site/jacoco
 
-      - name: Install Frontend Dependencies
+      - name: Display Coverage Report
         run: |
-          cd todo-app
-          npm ci
+          echo "Code coverage report generated:"
+          ls -l todo/target/site/jacoco/index.html || true
 
-      - name: Run Frontend Tests with Coverage
-        run: |
-          cd todo-app
-          npm run test -- --code-coverage --watch=false
-
-      - name: Move Frontend Coverage Report
-        run: |
-          mkdir -p reports/frontend
-          mv todo-app/coverage/* reports/frontend
-
-      # Deploy Both Reports to GitHub Pages
-      - name: Deploy Coverage Reports to GitHub Pages
+      - name: Deploy Coverage Report to GitHub Pages
+        if: success()
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: reports
+          publish_dir: todo/target/site/jacoco
