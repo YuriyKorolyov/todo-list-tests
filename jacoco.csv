@@ -1,0 +1,5 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+ToDo Application,com.example.todo.controllers,TaskController,31,15,0,0,9,5,3,3,3,3
+ToDo Application,com.example.todo.models,Task,0,33,0,0,0,14,0,8,0,8
+ToDo Application,com.example.todo.service,TaskService,33,26,0,0,6,8,3,5,3,5
+ToDo Application,com.example.todo,ToDoApplication,5,3,0,0,2,1,1,1,1,1
