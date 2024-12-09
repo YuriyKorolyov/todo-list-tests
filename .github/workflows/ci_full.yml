@@ -1,0 +1,81 @@
+name: Tests with Code Coverage
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  tests:
+    name: Run Tests with Code Coverage
+    runs-on: ubuntu-22.04
+    services:
+      postgres:
+        image: postgres:15
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: S19c200ak
+          POSTGRES_DB: todo_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Backend Tests
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Run Backend Tests with Coverage
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/todo_db
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: S19c200ak
+        run: |
+          cd todo
+          mvn clean verify jacoco:report
+
+      - name: Move Backend Coverage Report
+        run: |
+          mkdir -p reports/backend
+          mv todo/target/site/jacoco/* reports/backend
+
+      # Frontend Tests
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd task-app
+          npm ci
+
+      - name: Run Frontend Tests with Coverage
+        run: |
+          cd task-app
+          npm run test -- --code-coverage --watch=false
+
+      - name: Move Frontend Coverage Report
+        run: |
+          mkdir -p reports/frontend
+          mv task-app/coverage/* reports/frontend
+
+      # Deploy Both Reports to GitHub Pages
+      - name: Deploy Coverage Reports to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: reports
