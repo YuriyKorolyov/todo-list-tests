@@ -1,4 +1,4 @@
-name: Backend Tests with PostgreSQL
+name: Backend Tests with Code Coverage
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   backend-tests:
-    name: Run Backend Tests with DB
+    name: Run Backend Tests with Code Coverage
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -37,11 +37,22 @@ jobs:
           distribution: 'temurin'
           java-version: '17' # Используйте вашу версию Java
 
-      - name: Run Maven Tests
+      - name: Run Maven Tests with Coverage
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/todo_db
           SPRING_DATASOURCE_USERNAME: postgres
           SPRING_DATASOURCE_PASSWORD: S19c200ak
         run: |
           cd todo
-          mvn clean verify
+          mvn clean verify jacoco:report
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: todo/target/site/jacoco
+
+      - name: Display Coverage Report
+        run: |
+          echo "Code coverage report generated:"
+          ls -l todo/target/site/jacoco/index.html || true
