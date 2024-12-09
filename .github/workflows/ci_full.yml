@@ -60,18 +60,18 @@ jobs:
 
       - name: Install Frontend Dependencies
         run: |
-          cd task-app
+          cd todo-app
           npm ci
 
       - name: Run Frontend Tests with Coverage
         run: |
-          cd task-app
+          cd todo-app
           npm run test -- --code-coverage --watch=false
 
       - name: Move Frontend Coverage Report
         run: |
           mkdir -p reports/frontend
-          mv task-app/coverage/* reports/frontend
+          mv todo-app/coverage/* reports/frontend
 
       # Deploy Both Reports to GitHub Pages
       - name: Deploy Coverage Reports to GitHub Pages
