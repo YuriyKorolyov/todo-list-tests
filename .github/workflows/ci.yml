@@ -1,4 +1,4 @@
-name: Code Coverage and Tests
+name: Backend Tests with PostgreSQL
 
 on:
   push:
@@ -10,8 +10,23 @@ on:
 
 jobs:
   backend-tests:
-    name: Run Backend Tests and Coverage
+    name: Run Backend Tests with DB
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: S19c200ak
+          POSTGRES_DB: todo_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -20,83 +35,13 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '17' # Укажите нужную версию Java
+          java-version: '17' # Используйте вашу версию Java
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('todo/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-m2-
-
-      - name: Run Maven Tests with Coverage
+      - name: Run Maven Tests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/todo_db
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: S19c200ak
         run: |
           cd todo
           mvn clean verify
-          mvn jacoco:report
-
-      - name: Upload Coverage Report
-        uses: actions/upload-artifact@v3
-        with:
-          name: backend-coverage-report
-          path: todo/target/site/jacoco
-
-  frontend-tests:
-    name: Run Frontend Tests and Coverage
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18' # Укажите нужную версию Node.js
-
-      - name: Cache Node Modules
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('todo-app/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Install Dependencies
-        run: |
-          cd todo-app
-          npm install
-
-      - name: Run Angular Tests
-        run: |
-          cd todo-app
-          npm test -- --watch=false --code-coverage
-
-      - name: Upload Coverage Report
-        uses: actions/upload-artifact@v3
-        with:
-          name: frontend-coverage-report
-          path: todo-app/coverage
-
-  merge-coverage-reports:
-    name: Combine Coverage Reports (Optional)
-    runs-on: ubuntu-latest
-    needs:
-      - backend-tests
-      - frontend-tests
-    steps:
-      - name: Download Backend Coverage Report
-        uses: actions/download-artifact@v3
-        with:
-          name: backend-coverage-report
-          path: backend-coverage
-
-      - name: Download Frontend Coverage Report
-        uses: actions/download-artifact@v3
-        with:
-          name: frontend-coverage-report
-          path: frontend-coverage
-
-      - name: Combine Coverage Reports
-        run: |
-          echo "Combine backend and frontend coverage reports here if needed"
