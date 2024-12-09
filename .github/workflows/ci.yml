@@ -11,7 +11,7 @@ on:
 jobs:
   backend-tests:
     name: Run Backend Tests with Code Coverage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     services:
       postgres:
         image: postgres:15
@@ -47,7 +47,7 @@ jobs:
           mvn clean verify jacoco:report
 
       - name: Upload Coverage Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: todo/target/site/jacoco
