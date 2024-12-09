@@ -1,35 +1,65 @@
-name: CI for Spring Boot Application
+name: Backend Tests with Code Coverage
 
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  backend-tests:
+    name: Run Backend Tests with Code Coverage
+    runs-on: ubuntu-22.04
+    services:
+      postgres:
+        image: postgres:15
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: S19c200ak
+          POSTGRES_DB: todo_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-      # Шаг 1: Проверка репозитория
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Шаг 2: Настройка JDK 
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
+          distribution: 'temurin'
+          java-version: '17' # Используйте вашу версию Java
 
-      # Шаг 3: Скачивание зависимостей и запуск тестов с Maven
-      - name: Build with Maven
-        run: mvn clean verify --no-transfer-progress
+      - name: Run Maven Tests with Coverage
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/todo_db
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: S19c200ak
+        run: |
+          cd todo
+          mvn clean verify jacoco:report
 
-      # Шаг 4: Генерация отчёта о покрытии тестами (с использованием JaCoCo)
-      - name: Upload test coverage report
-        if: success()
-        uses: codecov/codecov-action@v3
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
         with:
-          file: ./target/site/jacoco/jacoco.xml
+          name: coverage-report
+          path: todo/target/site/jacoco
+
+      - name: Display Coverage Report
+        run: |
+          echo "Code coverage report generated:"
+          ls -l todo/target/site/jacoco/index.html || true
+
+      - name: Deploy Coverage Report to GitHub Pages
+        if: success()
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: todo/target/site/jacoco
